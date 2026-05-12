@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>האתר של נועם</title>
+  </head>
+  <body>
+    <h1>שלום! אני נועם</h1>
+    <p>אני אוהב כדורגל ומיינקראפט.</p>
+    <p>הצבע האהוב עליי הוא אדום.</p>
+    <img src="m.png">
+    <img src="noam.jpg">
+  </body>
+</html>
