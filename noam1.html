@@ -1,0 +1,557 @@
+
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+
+<head>
+  <meta charset="UTF-8">
+
+  <!-- ================================================= -->
+  <!-- כותרת האתר -->
+  <!-- ================================================= -->
+
+  <title>תעלומת כדור הבדולח</title>
+
+  <style>
+
+    /* ================================================= */
+    /* עיצוב כללי של הדף */
+    /* ================================================= */
+
+    body {
+      font-family: Arial;
+      background: linear-gradient(#140022, #3b0066);
+      color: white;
+      text-align: center;
+      padding: 20px;
+    }
+
+    /* ================================================= */
+    /* עיצוב של כל שלב בסיפור */
+    /* ================================================= */
+
+    .scene {
+      display: none;
+      background: rgba(255,255,255,0.1);
+      border-radius: 20px;
+      padding: 20px;
+      max-width: 850px;
+      margin: auto;
+      margin-top: 20px;
+      box-shadow: 0 0 15px black;
+    }
+
+    /* ================================================= */
+    /* החדר שמוצג כרגע */
+    /* ================================================= */
+
+    .active {
+      display: block;
+    }
+
+    /* ================================================= */
+    /* עיצוב כפתורים */
+    /* ================================================= */
+
+    button {
+      background: #ffd6ff;
+      border: none;
+      border-radius: 15px;
+      padding: 15px;
+      margin: 10px;
+      font-size: 18px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      background: white;
+      transform: scale(1.05);
+    }
+
+    /* ================================================= */
+    /* אימוג'ים */
+    /* ================================================= */
+
+    .emoji {
+      font-size: 60px;
+    }
+
+  </style>
+</head>
+
+<body>
+
+  <!-- ================================================= -->
+  <!-- פתיחה -->
+  <!-- ================================================= -->
+
+  <h1>🔮 תעלומת כדור הבדולח 🔮</h1>
+
+  <div id="scene1" class="scene active">
+
+    <div class="emoji">🔮</div>
+
+    <p>
+        בלילה סוער אחד נעלם כדור הבדולח העתיק מהמוזיאון הסודי...
+        עליכם לגלות מי לקח אותו לפני חצות!
+    </p>
+
+    <p>
+      התחלת החקירה - ישנם שלושה חשודים. את מי תחקרו?
+    </p>
+
+    <button onclick="showScene('magician1')">
+      🧙‍♂️ המכשף הזקן
+    </button>
+
+    <button onclick="showScene('parrot1')">
+      🐻 הדובי המדבר
+    </button>
+
+    <button onclick="showScene('violin1')">
+      הערפד המרושע👿
+    </button>
+
+  </div>
+
+  <!-- ================================================= -->
+  <!-- מסלול המכשף-->
+  <!-- ================================================= -->
+
+  <div id="magician1" class="scene">
+
+    <div class="emoji">🧙‍♂️</div>
+
+    <p>
+      המכשף לוחש:
+      "הפתרון נמצא במקום שממנו שומעים מוזיקה..."
+    </p>
+
+    <button onclick="showScene('magician2')">
+      🎹 לבדוק את הפסנתר
+    </button>
+
+    <button onclick="showScene('wrong1')">
+      🎩 לחפש בכובע
+    </button>
+
+    <button onclick="showScene('wrong2')">
+      🛏️ ללכת לישון
+    </button>
+
+    <br>
+
+    <button onclick="showScene('scene1')">
+      ⬅️ חזרה
+    </button>
+
+  </div>
+
+  <div id="magician2" class="scene">
+
+    <div class="emoji">🎹</div>
+
+    <p>
+      הפסנתר מנגן מנגינה מוכרת מאוד.
+      על אחד הקלידים כתוב:
+      "ישראל."
+    </p>
+
+    <button onclick="showScene('magician3')">
+      💿 לחפש תקליט
+    </button>
+
+    <button onclick="showScene('wrong3')">
+      🥪 להכין סנדוויץ לארנב
+    </button>
+
+    <button onclick="showScene('wrong4')">
+      🐸 לחפש צפרדע
+    </button>
+
+    <br>
+
+    <button onclick="showScene('magician1')">
+      ⬅️ חזרה
+    </button>
+
+  </div>
+
+  <div id="magician3" class="scene">
+
+    <div class="emoji">💿</div>
+
+    <p>
+      מאחורי המדף מצאתם פתק.
+      עליו כתוב ובמקום השני    </p>
+
+    <button onclick="showScene('solution')">
+      🎵 לבדוק איזה שיר זה
+    </button>
+
+    <button onclick="showScene('wrong5')">
+      🔥 לזרוק את התקליט
+    </button>
+
+    <button onclick="showScene('wrong6')">
+      🚪 לברוח מהטירה
+    </button>
+
+    <br>
+
+    <button onclick="showScene('magician2')">
+      ⬅️ חזרה
+    </button>
+
+  </div>
+
+  <!-- ================================================= -->
+  <!-- מסלול הדובי -->
+  <!-- ================================================= -->
+
+  <div id="parrot1" class="scene">
+
+    <div class="emoji">🐻</div>
+
+    <p>
+      הדובי צועק :
+      "מישל! מישל!"
+    </p>
+
+    <button onclick="showScene('parrot2')">
+      🍪 לתת לדובי קרקר
+    </button>
+
+    <button onclick="showScene('wrong7')">
+      🧃 לתת לו מיץ מלפפונים
+    </button>
+
+    <button onclick="showScene('wrong8')">
+      🎈 לנפח בלון
+    </button>
+
+    <br>
+
+    <button onclick="showScene('scene1')">
+      ⬅️ חזרה
+    </button>
+
+  </div>
+
+  <div id="parrot2" class="scene">
+
+    <div class="emoji">🍪</div>
+
+    <p>
+      הדובי שמח מאוד ונותן לכם מפתח קטן.
+      על המפתח חרוט תו מוזיקלי.
+    </p>
+
+    <button onclick="showScene('parrot3')">
+      🔑 לפתוח את המגירה הסודית
+    </button>
+
+    <button onclick="showScene('wrong9')">
+      🧊 להכניס את המפתח למקפיא
+    </button>
+
+    <button onclick="showScene('wrong10')">
+      📱 לצלם סלפי
+    </button>
+
+    <br>
+
+    <button onclick="showScene('parrot1')">
+      ⬅️ חזרה
+    </button>
+
+  </div>
+
+  <div id="parrot3" class="scene">
+
+    <div class="emoji">🎼</div>
+
+    <p>
+      בתוך המגירה מצאתם פתק:
+      "השיר שזכה במקום השני יפתח את כדור הבדולח."
+    </p>
+
+    <button onclick="showScene('solution')">
+      🎤 לנחש את השיר
+    </button>
+
+    <button onclick="showScene('wrong11')">
+      🍦 לאכול גלידה
+    </button>
+
+    <button onclick="showScene('wrong12')">
+      💤 להירדם
+    </button>
+
+    <br>
+
+    <button onclick="showScene('parrot2')">
+      ⬅️ חזרה
+    </button>
+
+  </div>
+
+  <!-- ================================================= -->
+  <!-- מסלול הערפד -->
+  <!-- ================================================= -->
+
+  <div id="violin1" class="scene">
+
+    <div class="emoji">👿</div>
+
+    <p>
+      הערפד נראה לחוץ מאוד.
+      הוא אומר:
+      "הרמז נמצא בתווים..."
+    </p>
+
+    <button onclick="showScene('violin2')">
+      📄 לבדוק את התווים
+    </button>
+
+    <button onclick="showScene('wrong13')">
+      🍉 לאכול אבטיח
+    </button>
+
+    <button onclick="showScene('wrong14')">
+      🚲 לרכוב על אופניים
+    </button>
+
+    <br>
+
+    <button onclick="showScene('scene1')">
+      ⬅️ חזרה
+    </button>
+
+  </div>
+
+  <div id="violin2" class="scene">
+
+    <div class="emoji">📄</div>
+
+    <p>
+      בין התווים כתוב:
+      "האזינו לשיר הישן שהגיע כמעט למקום הראשון."
+    </p>
+
+    <button onclick="showScene('violin3')">
+      📻 להדליק רדיו ישן
+    </button>
+
+    <button onclick="showScene('wrong15')">
+      🐟 לחפש דגים
+    </button>
+
+    <button onclick="showScene('wrong16')">
+      🎲 לשחק קוביות
+    </button>
+
+    <br>
+
+    <button onclick="showScene('violin1')">
+      ⬅️ חזרה
+    </button>
+
+  </div>
+
+  <div id="violin3" class="scene">
+
+    <div class="emoji">📻</div>
+
+    <p>
+      מהרדיו נשמעת המילה:
+      "מישל..."
+    </p>
+
+    <button onclick="showScene('solution')">
+      🔓 לפתוח את כדור הבדולח
+    </button>
+
+    <button onclick="showScene('wrong17')">
+      🔇 לכבות את הרדיו
+    </button>
+
+    <button onclick="showScene('wrong18')">
+      🍌 לאכול בננה
+    </button>
+
+    <br>
+
+    <button onclick="showScene('violin2')">
+      ⬅️ חזרה
+    </button>
+
+  </div>
+
+  <!-- ================================================= -->
+  <!-- הפתרון -->
+  <!-- ================================================= -->
+
+  <div id="solution" class="scene">
+
+    <div class="emoji">🏆</div>
+
+    <p>
+      כל הכבוד, פיענחתם את החידה!
+    </p>
+
+    <p>
+      מישל שזכה במקום השני באורוויזיון!
+    </p>
+
+    <p>
+      לחצו לשמיעת השיר:
+    </p>
+
+    <a href="https://www.youtube.com/results?search_query=מישל+אירוויזיון"
+       target="_blank"
+       style="color:yellow;font-size:24px;">
+       ▶️ לצפייה ביוטיוב
+    </a>
+
+    <br><br>
+
+    <button onclick="showScene('scene1')">
+      🔄 להתחיל מחדש
+    </button>
+
+  </div>
+
+  <!-- ================================================= -->
+  <!-- תשובות שגויות -->
+  <!-- ================================================= -->
+
+  <div id="wrong1" class="scene">
+    <div class="emoji">🍕</div>
+    <p>הפיצה הייתה טעימה... אבל זה לא הפתרון.</p>
+    <button onclick="showScene('scene1')">⬅️ חזרה להתחלה</button>
+  </div>
+
+  <div id="wrong2" class="scene">
+    <div class="emoji">😴</div>
+    <p>נרדמתם מיד. הבלשים האחרים כבר פתרו את החידה.</p>
+    <button onclick="showScene('scene1')">⬅️ חזרה להתחלה</button>
+  </div>
+
+  <div id="wrong3" class="scene">
+    <div class="emoji">🥪</div>
+    <p>הסנדוויץ' היה מושלם. החקירה פחות.</p>
+    <button onclick="showScene('scene1')">⬅️ חזרה להתחלה</button>
+  </div>
+
+  <div id="wrong4" class="scene">
+    <div class="emoji">🐸</div>
+    <p>מצאתם צפרדע רוקדת דיסקו.</p>
+    <button onclick="showScene('scene1')">⬅️ חזרה להתחלה</button>
+  </div>
+
+  <div id="wrong5" class="scene">
+    <div class="emoji">🔥</div>
+    <p>התקליט נמס... ועכשיו אין רמזים.</p>
+    <button onclick="showScene('scene1')">⬅️ חזרה להתחלה</button>
+  </div>
+
+  <div id="wrong6" class="scene">
+    <div class="emoji">🚪</div>
+    <p>ברחתם מהטירה לפני שגיליתם את הסוד.</p>
+    <button onclick="showScene('scene1')">⬅️ חזרה להתחלה</button>
+  </div>
+
+  <div id="wrong7" class="scene">
+    <div class="emoji">🧃</div>
+    <p>הדובי התעצבן וברח עם הרמז.</p>
+    <button onclick="showScene('scene1')">⬅️ חזרה להתחלה</button>
+  </div>
+
+  <div id="wrong8" class="scene">
+    <div class="emoji">🎈</div>
+    <p>הבלון התפוצץ והבהיל את כולם.</p>
+    <button onclick="showScene('scene1')">⬅️ חזרה להתחלה</button>
+  </div>
+
+  <div id="wrong9" class="scene">
+    <div class="emoji">🧊</div>
+    <p>המפתח קפא בתוך קרחון קטן.</p>
+    <button onclick="showScene('scene1')">⬅️ חזרה להתחלה</button>
+  </div>
+
+  <div id="wrong10" class="scene">
+    <div class="emoji">📱</div>
+    <p>הסלפי יצא מעולה. החידה פחות.</p>
+    <button onclick="showScene('scene1')">⬅️ חזרה להתחלה</button>
+  </div>
+
+  <div id="wrong11" class="scene">
+    <div class="emoji">🍦</div>
+    <p>גלידת חרדל הייתה רעיון גרוע.</p>
+    <button onclick="showScene('scene1')">⬅️ חזרה להתחלה</button>
+  </div>
+
+  <div id="wrong12" class="scene">
+    <div class="emoji">💤</div>
+    <p>נרדמתם ליד כדור הבדולח.</p>
+    <button onclick="showScene('scene1')">⬅️ חזרה להתחלה</button>
+  </div>
+
+  <div id="wrong13" class="scene">
+    <div class="emoji">🍉</div>
+    <p>האבטיח היה ענק במיוחד.</p>
+    <button onclick="showScene('scene1')">⬅️ חזרה להתחלה</button>
+  </div>
+
+  <div id="wrong14" class="scene">
+    <div class="emoji">🚲</div>
+    <p>נסעתם ישר לתוך שיח.</p>
+    <button onclick="showScene('scene1')">⬅️ חזרה להתחלה</button>
+  </div>
+
+  <div id="wrong15" class="scene">
+    <div class="emoji">🐟</div>
+    <p>הדגים לא ידעו שום דבר על האירוויזיון.</p>
+    <button onclick="showScene('scene1')">⬅️ חזרה להתחלה</button>
+  </div>
+
+  <div id="wrong16" class="scene">
+    <div class="emoji">🎲</div>
+    <p>הפסדתם במשחק הקוביות.</p>
+    <button onclick="showScene('scene1')">⬅️ חזרה להתחלה</button>
+  </div>
+
+  <div id="wrong17" class="scene">
+    <div class="emoji">🔇</div>
+    <p>כיביתם את הרדיו... והרמז נעלם.</p>
+    <button onclick="showScene('scene1')">⬅️ חזרה להתחלה</button>
+  </div>
+
+  <div id="wrong18" class="scene">
+    <div class="emoji">🍌</div>
+    <p>החלקתם על קליפת הבננה.</p>
+    <button onclick="showScene('scene1')">⬅️ חזרה להתחלה</button>
+  </div>
+
+  <script>
+
+    // =================================================
+    // הפונקציה מציגה רק את השלב שבחרנו
+    // =================================================
+
+    function showScene(sceneId) {
+
+      let scenes = document.querySelectorAll('.scene');
+
+      scenes.forEach(function(scene) {
+        scene.classList.remove('active');
+      });
+
+      document.getElementById(sceneId).classList.add('active');
+    }
+
+  </script>
+
+</body>
+</html>
