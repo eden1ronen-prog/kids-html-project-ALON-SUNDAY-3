@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>פרקור תלת מימד</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+      background: #87ceeb;
+    }
+
+    #ui {
+      position: fixed;
+      top: 12px;
+      right: 12px;
+      z-index: 10;
+      color: white;
+      background: rgba(0, 0, 0, 0.45);
+      padding: 12px 16px;
+      border-radius: 14px;
+      font-size: 20px;
+      line-height: 1.7;
+      text-shadow: 0 2px 4px black;
+    }
+
+    #help {
+      position: fixed;
+      bottom: 12px;
+      left: 12px;
+      z-index: 10;
+      direction: ltr;
+      color: white;
+      background: rgba(0, 0, 0, 0.45);
+      padding: 10px 14px;
+      border-radius: 14px;
+      font-size: 18px;
+      text-shadow: 0 2px 4px black;
+    }
+
+    #message {
+      position: fixed;
+      left: 50%;
+      top: 45%;
+      transform: translate(-50%, -50%);
+      z-index: 20;
+      color: white;
+      background: rgba(0, 0, 0, 0.75);
+      padding: 22px 30px;
+      border-radius: 20px;
+      font-size: 30px;
+      text-align: center;
+      display: none;
+      text-shadow: 0 2px 4px black;
+    }
+  </style>
+</head>
+<body>
+  <div id="ui">
+    <div>שלב: <span id="levelText">1</span></div>
+    <div>חיים: <span id="hearts">❤️❤️❤️❤️❤️❤️❤️❤️❤️❤️</span></div>
+    <div>כוח שלך: <span id="powerText">3</span> ⚡</div>
+    <div>אויבים: <span id="enemyText">1</span> 👾</div>
+  </div>
+
+  <div id="message"></div>
+  <div id="help">W A S D = Move | SPACE = Jump</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+  <script>
+    const levelText = document.getElementById("levelText");
+    const hearts = document.getElementById("hearts");
+    const powerText = document.getElementById("powerText");
+    const enemyText = document.getElementById("enemyText");
+    const message = document.getElementById("message");
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x87ceeb);
+
+    const camera = new THREE.PerspectiveCamera(
+      75,
+      window.innerWidth / window.innerHeight,
+      0.1,
+      2000
+    );
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    document.body.appendChild(renderer.domElement);
+
+    const light = new THREE.DirectionalLight(0xffffff, 1.3);
+    light.position.set(50, 80, 30);
+    light.castShadow = true;
+    scene.add(light);
+
+    const ambient = new THREE.AmbientLight(0xffffff, 0.55);
+    scene.add(ambient);
+
+    const keys = {};
+    const platforms = [];
+    const enemies = [];
+
+    let level = 1;
+    let lives = 10;
+    let playerPower = 3;
+    let exitDoor = null;
+
+    const player = {
+      mesh: null,
+      emoji: null,
+      x: 0,
+      y: 4,
+      z: 0,
+      vy: 0,
+      onGround: false
+    };
+
+    const moveSpeed = 0.34;
+    const jumpPower = 0.75;
+    const gravity = 0.035;
+
+    document.addEventListener("keydown", e => {
+      keys[e.code] = true;
+      if (e.code === "Space") e.preventDefault();
+    });
+
+    document.addEventListener("keyup", e => {
+      keys[e.code] = false;
+    });
+
+    function makeEmojiTexture(emoji, size = 256) {
+      const canvas = document.createElement("canvas");
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, size, size);
+      ctx.font = `${size * 0.72}px Arial`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(emoji, size / 2, size / 2);
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.needsUpdate = true;
+      return texture;
+    }
+
+    function makeEmojiSprite(emoji, scale = 3) {
+      const material = new THREE.SpriteMaterial({
+        map: makeEmojiTexture(emoji),
+        transparent: true
+      });
+      const sprite = new THREE.Sprite(material);
+      sprite.scale.set(scale, scale, scale);
+      return sprite;
+    }
+
+    function showMessage(text, time = 1200) {
+      message.innerHTML = text;
+      message.style.display = "block";
+      setTimeout(() => {
+        message.style.display = "none";
+      }, time);
+    }
+
+    function updateUI() {
+      levelText.textContent = level;
+      powerText.textContent = playerPower;
+      enemyText.textContent = enemies.length;
+      hearts.textContent = "❤️".repeat(lives) + "🖤".repeat(10 - lives);
+    }
+
+    function createPlatform(x, y, z) {
+      const geometry = new THREE.BoxGeometry(8, 1, 8);
+      const material = new THREE.MeshStandardMaterial({ color: 0x22c55e });
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.position.set(x, y, z);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      scene.add(mesh);
+      platforms.push(mesh);
+      return mesh;
+    }
+
+    function createPlayer() {
+      const body = new THREE.Mesh(
+        new THREE.SphereGeometry(1, 32, 32),
+        new THREE.MeshStandardMaterial({ color: 0x2563eb })
+      );
+      body.castShadow = true;
+      scene.add(body);
+
+      const emoji = makeEmojiSprite("🧙", 3.2);
+      scene.add(emoji);
+
+      player.mesh = body;
+      player.emoji = emoji;
+    }
+
+    function createEnemy(x, y, z, power) {
+      const body = new THREE.Mesh(
+        new THREE.SphereGeometry(1, 24, 24),
+        new THREE.MeshStandardMaterial({ color: 0xef4444 })
+      );
+      body.position.set(x, y, z);
+      body.castShadow = true;
+      scene.add(body);
+
+      const emojiList = ["👾", "👹", "🧟", "🤖", "🐉"];
+      const emoji = makeEmojiSprite(emojiList[Math.floor(Math.random() * emojiList.length)], 3);
+      scene.add(emoji);
+
+      enemies.push({
+        body,
+        emoji,
+        power,
+        baseX: x,
+        dir: Math.random() > 0.5 ? 1 : -1
+      });
+    }
+
+    function createExitDoor(x, y, z) {
+      const door = makeEmojiSprite("🚪", 4.2);
+      door.position.set(x, y + 2.4, z);
+      scene.add(door);
+      exitDoor = door;
+    }
+
+    function clearLevel() {
+      for (const p of platforms) scene.remove(p);
+      platforms.length = 0;
+
+      for (const e of enemies) {
+        scene.remove(e.body);
+        scene.remove(e.emoji);
+      }
+      enemies.length = 0;
+
+      if (exitDoor) {
+        scene.remove(exitDoor);
+        exitDoor = null;
+      }
+    }
+
+    function buildLevel() {
+      clearLevel();
+
+      let x = 0;
+      let z = 0;
+      let y = 0;
+
+      createPlatform(x, y, z);
+
+      const platformCount = 7 + level;
+      for (let i = 1; i < platformCount; i++) {
+        x += 10 + Math.random() * 4;
+        z += (Math.random() - 0.5) * 10;
+        y += Math.random() > 0.55 ? 1 : 0;
+        createPlatform(x, y, z);
+      }
+
+      const last = platforms[platforms.length - 1];
+      createExitDoor(last.position.x, last.position.y, last.position.z);
+
+      for (let i = 0; i < level; i++) {
+        const p = platforms[Math.min(platforms.length - 2, 1 + i)];
+        createEnemy(p.position.x, p.position.y + 2, p.position.z, 2 + level + i);
+      }
+
+      player.x = 0;
+      player.y = 4;
+      player.z = 0;
+      player.vy = 0;
+      player.onGround = false;
+
+      updateUI();
+      showMessage("שלב " + level + "<br>תגיע לדלת 🚪");
+    }
+
+    function getGroundUnderPlayer() {
+      for (const p of platforms) {
+        const dx = Math.abs(player.x - p.position.x);
+        const dz = Math.abs(player.z - p.position.z);
+        const top = p.position.y + 1.25;
+        const closeToTop = player.y <= top + 0.5 && player.y >= top - 0.8;
+
+        if (dx < 4 && dz < 4 && closeToTop && player.vy <= 0) {
+          return top;
+        }
+      }
+      return null;
+    }
+
+    function damage(amount) {
+      lives -= amount;
+      if (lives < 0) lives = 0;
+      updateUI();
+
+      if (lives <= 0) {
+        showMessage("נגמרו החיים! מתחילים מחדש 😵", 1600);
+        level = 1;
+        lives = 10;
+        playerPower = 3;
+        setTimeout(buildLevel, 900);
+        return;
+      }
+
+      showMessage("נפגעת! 💔", 700);
+      player.x = platforms[0].position.x;
+      player.z = platforms[0].position.z;
+      player.y = platforms[0].position.y + 4;
+      player.vy = 0;
+    }
+
+    function updatePlayer() {
+      let dx = 0;
+      let dz = 0;
+
+      if (keys["KeyW"]) dx += moveSpeed;
+      if (keys["KeyS"]) dx -= moveSpeed;
+      if (keys["KeyA"]) dz -= moveSpeed;
+      if (keys["KeyD"]) dz += moveSpeed;
+
+      player.x += dx;
+      player.z += dz;
+
+      if (keys["Space"] && player.onGround) {
+        player.vy = jumpPower;
+        player.onGround = false;
+      }
+
+      player.y += player.vy;
+      player.vy -= gravity;
+
+      const ground = getGroundUnderPlayer();
+      if (ground !== null) {
+        player.y = ground;
+        player.vy = 0;
+        player.onGround = true;
+      } else {
+        player.onGround = false;
+      }
+
+      if (player.y < -15) {
+        damage(1);
+      }
+
+      player.mesh.position.set(player.x, player.y, player.z);
+      player.emoji.position.set(player.x, player.y + 1.7, player.z);
+    }
+
+    function updateEnemies() {
+      for (let i = enemies.length - 1; i >= 0; i--) {
+        const e = enemies[i];
+        e.body.position.x += e.dir * (0.05 + level * 0.01);
+
+        if (Math.abs(e.body.position.x - e.baseX) > 3) {
+          e.dir *= -1;
+        }
+
+        e.emoji.position.set(e.body.position.x, e.body.position.y + 1.7, e.body.position.z);
+
+        const dist = player.mesh.position.distanceTo(e.body.position);
+        if (dist < 2.2) {
+          if (playerPower >= e.power) {
+            scene.remove(e.body);
+            scene.remove(e.emoji);
+            enemies.splice(i, 1);
+            playerPower++;
+            updateUI();
+            showMessage("ניצחת אויב! ⚡", 750);
+          } else {
+            damage(Math.min(3, e.power - playerPower));
+          }
+        }
+      }
+    }
+
+    function checkExit() {
+      if (!exitDoor) return;
+      const dist = player.mesh.position.distanceTo(exitDoor.position);
+      if (dist < 3) {
+        level++;
+        playerPower++;
+        lives = Math.min(10, lives + 2);
+        buildLevel();
+      }
+    }
+
+    function updateCamera() {
+      camera.position.set(player.x - 12, player.y + 10, player.z + 15);
+      camera.lookAt(player.x + 8, player.y, player.z);
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      updatePlayer();
+      updateEnemies();
+      checkExit();
+      updateCamera();
+      renderer.render(scene, camera);
+    }
+
+    window.addEventListener("resize", () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    createPlayer();
+    buildLevel();
+    animate();
+  </script>
+</body>
+</html>

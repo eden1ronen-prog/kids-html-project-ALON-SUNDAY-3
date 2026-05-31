@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Laser Tag</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: linear-gradient(#182848, #4b6cb7);
+      font-family: Arial, sans-serif;
+      color: white;
+      user-select: none;
+    }
+
+    canvas {
+      display: block;
+      background: linear-gradient(#77b5ff, #bde0ff 55%, #5ac85a 55%);
+    }
+
+    #ui {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: rgba(0, 0, 0, 0.45);
+      padding: 12px;
+      border-radius: 14px;
+      font-size: 18px;
+      line-height: 1.7;
+    }
+
+    #help {
+      position: fixed;
+      left: 10px;
+      top: 10px;
+      background: rgba(0, 0, 0, 0.45);
+      padding: 12px;
+      border-radius: 14px;
+      font-size: 16px;
+      direction: rtl;
+    }
+
+    #message {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      font-size: 34px;
+      background: rgba(0, 0, 0, 0.55);
+      visibility: hidden;
+      padding: 30px;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="game"></canvas>
+
+  <div id="ui">
+    <div>❤️ חיים: <span id="lives">5</span></div>
+    <div>⭐ ניקוד: <span id="score">0</span></div>
+    <div>🏁 שלב: <span id="level">1</span>/5</div>
+    <div>🎒 נשק: <span id="weapon">🔫 רובה</span></div>
+  </div>
+
+  <div id="help">
+    <b>Laser Tag</b><br>
+    תזוזה: W A S D<br>
+    קפיצה: רווח<br>
+    ירייה: קליק בעכבר<br>
+    1 🔫 רובה | 2 🛡️ מגן<br>
+    3 🔪 סכין | 4 💣 פצצה
+  </div>
+
+  <div id="message"></div>
+
+  <script>
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+
+    const livesEl = document.getElementById("lives");
+    const scoreEl = document.getElementById("score");
+    const levelEl = document.getElementById("level");
+    const weaponEl = document.getElementById("weapon");
+    const messageEl = document.getElementById("message");
+
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener("resize", resize);
+    resize();
+
+    const keys = {};
+    let mouse = { x: 0, y: 0 };
+    let score = 0;
+    let level = 1;
+    let gameOver = false;
+
+    const groundY = () => canvas.height * 0.78;
+
+    const weapons = {
+      gun: { name: "🔫 רובה", damage: 1, cooldown: 260 },
+      shield: { name: "🛡️ מגן", damage: 0, cooldown: 700 },
+      knife: { name: "🔪 סכין", damage: 2, cooldown: 420 },
+      bomb: { name: "💣 פצצה", damage: 3, cooldown: 1200 }
+    };
+
+    let currentWeapon = "gun";
+    let lastAttack = 0;
+    let shieldUntil = 0;
+
+    const player = {
+      x: 120,
+      y: 0,
+      w: 44,
+      h: 60,
+      vx: 0,
+      vy: 0,
+      speed: 5,
+      lives: 5,
+      onGround: false,
+      emoji: "😎"
+    };
+
+    let enemies = [];
+    let bullets = [];
+    let bombs = [];
+    let sparks = [];
+
+    function resetPlayerPosition() {
+      player.x = 120;
+      player.y = groundY() - player.h;
+      player.vx = 0;
+      player.vy = 0;
+    }
+
+    function spawnLevel() {
+      enemies = [];
+      bullets = [];
+      bombs = [];
+      sparks = [];
+      resetPlayerPosition();
+
+      const amount = 3 + level * 2;
+      for (let i = 0; i < amount; i++) {
+        enemies.push({
+          x: 350 + Math.random() * (canvas.width - 450),
+          y: groundY() - 58,
+          w: 44,
+          h: 58,
+          speed: 1.1 + level * 0.35 + Math.random(),
+          lives: 1 + Math.floor(level / 2),
+          emoji: ["🤖", "👽", "🥷", "🧟", "👾"][Math.floor(Math.random() * 5)],
+          hitCooldown: 0
+        });
+      }
+    }
+
+    function drawEmoji(emoji, x, y, size) {
+      ctx.font = `${size}px Arial`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(emoji, x, y);
+    }
+
+    function drawWorld() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      ctx.fillStyle = "rgba(255,255,255,0.85)";
+      drawEmoji("☁️", canvas.width * 0.2, 90, 70);
+      drawEmoji("☁️", canvas.width * 0.75, 120, 80);
+      drawEmoji("🌳", canvas.width * 0.12, groundY() - 20, 70);
+      drawEmoji("🌳", canvas.width * 0.88, groundY() - 20, 70);
+
+      ctx.fillStyle = "#3fa43f";
+      ctx.fillRect(0, groundY(), canvas.width, canvas.height - groundY());
+
+      ctx.strokeStyle = "rgba(255,255,255,0.5)";
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(0, groundY());
+      ctx.lineTo(canvas.width, groundY());
+      ctx.stroke();
+    }
+
+    function drawPlayer() {
+      drawEmoji(player.emoji, player.x + player.w / 2, player.y + player.h / 2, 48);
+      drawEmoji(currentWeapon === "gun" ? "🔫" : currentWeapon === "shield" ? "🛡️" : currentWeapon === "knife" ? "🔪" : "💣", player.x + 55, player.y + 28, 30);
+
+      if (Date.now() < shieldUntil) {
+        ctx.beginPath();
+        ctx.arc(player.x + player.w / 2, player.y + player.h / 2, 48, 0, Math.PI * 2);
+        ctx.strokeStyle = "rgba(120,220,255,0.95)";
+        ctx.lineWidth = 5;
+        ctx.stroke();
+      }
+    }
+
+    function drawEnemies() {
+      enemies.forEach(e => {
+        drawEmoji(e.emoji, e.x + e.w / 2, e.y + e.h / 2, 46);
+        ctx.fillStyle = "rgba(0,0,0,0.45)";
+        ctx.fillRect(e.x, e.y - 16, e.w, 7);
+        ctx.fillStyle = "#ff4040";
+        ctx.fillRect(e.x, e.y - 16, e.w * (e.lives / (1 + Math.floor(level / 2))), 7);
+      });
+    }
+
+    function updatePlayer() {
+      player.vx = 0;
+      if (keys["a"] || keys["ArrowLeft"]) player.vx = -player.speed;
+      if (keys["d"] || keys["ArrowRight"]) player.vx = player.speed;
+      if (keys["w"]) player.vx *= 1.15;
+      if (keys["s"]) player.vx *= 0.7;
+
+      player.x += player.vx;
+      player.x = Math.max(0, Math.min(canvas.width - player.w, player.x));
+
+      player.vy += 0.65;
+      player.y += player.vy;
+
+      if (player.y + player.h >= groundY()) {
+        player.y = groundY() - player.h;
+        player.vy = 0;
+        player.onGround = true;
+      } else {
+        player.onGround = false;
+      }
+    }
+
+    function updateEnemies() {
+      enemies.forEach(e => {
+        const dir = player.x > e.x ? 1 : -1;
+        e.x += dir * e.speed;
+        e.hitCooldown -= 16;
+
+        if (touching(player, e) && e.hitCooldown <= 0) {
+          e.hitCooldown = 900;
+          if (Date.now() > shieldUntil) {
+            player.lives--;
+            makeSpark(player.x + player.w / 2, player.y + player.h / 2, "💥");
+          } else {
+            makeSpark(e.x + e.w / 2, e.y + e.h / 2, "🛡️");
+          }
+        }
+      });
+    }
+
+    function touching(a, b) {
+      return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+    }
+
+    function shoot() {
+      const now = Date.now();
+      const w = weapons[currentWeapon];
+      if (now - lastAttack < w.cooldown) return;
+      lastAttack = now;
+
+      if (currentWeapon === "shield") {
+        shieldUntil = Date.now() + 2200;
+        makeSpark(player.x + player.w / 2, player.y + player.h / 2, "🛡️");
+        return;
+      }
+
+      if (currentWeapon === "knife") {
+        enemies.forEach(e => {
+          const dist = Math.hypot((e.x + e.w / 2) - (player.x + player.w / 2), (e.y + e.h / 2) - (player.y + player.h / 2));
+          if (dist < 95) damageEnemy(e, weapons.knife.damage);
+        });
+        makeSpark(player.x + 60, player.y + 25, "⚔️");
+        return;
+      }
+
+      if (currentWeapon === "bomb") {
+        bombs.push({ x: player.x + player.w / 2, y: player.y + 15, vx: (mouse.x > player.x ? 1 : -1) * 6, vy: -7, r: 18 });
+        return;
+      }
+
+      const angle = Math.atan2(mouse.y - (player.y + 25), mouse.x - (player.x + player.w / 2));
+      bullets.push({
+        x: player.x + player.w / 2,
+        y: player.y + 25,
+        vx: Math.cos(angle) * 12,
+        vy: Math.sin(angle) * 12,
+        life: 80
+      });
+    }
+
+    function updateBullets() {
+      bullets.forEach(b => {
+        b.x += b.vx;
+        b.y += b.vy;
+        b.life--;
+      });
+
+      bullets = bullets.filter(b => b.life > 0 && b.x > 0 && b.x < canvas.width && b.y > 0 && b.y < canvas.height);
+
+      bullets.forEach(b => {
+        enemies.forEach(e => {
+          if (b.x > e.x && b.x < e.x + e.w && b.y > e.y && b.y < e.y + e.h) {
+            b.life = 0;
+            damageEnemy(e, weapons.gun.damage);
+            makeSpark(b.x, b.y, "✨");
+          }
+        });
+      });
+    }
+
+    function updateBombs() {
+      bombs.forEach(b => {
+        b.vy += 0.35;
+        b.x += b.vx;
+        b.y += b.vy;
+
+        if (b.y + b.r >= groundY()) {
+          explode(b.x, groundY());
+          b.dead = true;
+        }
+      });
+      bombs = bombs.filter(b => !b.dead);
+    }
+
+    function explode(x, y) {
+      makeSpark(x, y, "💥");
+      enemies.forEach(e => {
+        const dist = Math.hypot(e.x + e.w / 2 - x, e.y + e.h / 2 - y);
+        if (dist < 145) damageEnemy(e, weapons.bomb.damage);
+      });
+    }
+
+    function damageEnemy(enemy, amount) {
+      enemy.lives -= amount;
+      if (enemy.lives <= 0) {
+        score += 10 * level;
+        makeSpark(enemy.x + enemy.w / 2, enemy.y + enemy.h / 2, "⭐");
+      }
+    }
+
+    function makeSpark(x, y, emoji) {
+      sparks.push({ x, y, emoji, life: 35, vy: -1.2 });
+    }
+
+    function updateSparks() {
+      sparks.forEach(s => {
+        s.y += s.vy;
+        s.life--;
+      });
+      sparks = sparks.filter(s => s.life > 0);
+    }
+
+    function cleanDeadEnemies() {
+      enemies = enemies.filter(e => e.lives > 0);
+    }
+
+    function drawAttacks() {
+      bullets.forEach(b => drawEmoji("🔴", b.x, b.y, 20));
+      bombs.forEach(b => drawEmoji("💣", b.x, b.y, 34));
+      sparks.forEach(s => drawEmoji(s.emoji, s.x, s.y, 30));
+    }
+
+    function updateUI() {
+      livesEl.textContent = player.lives;
+      scoreEl.textContent = score;
+      levelEl.textContent = level;
+      weaponEl.textContent = weapons[currentWeapon].name;
+    }
+
+    function nextLevel() {
+      if (level >= 5) {
+        winGame();
+      } else {
+        level++;
+        showMessage(`כל הכבוד! עוברים לשלב ${level} 🏁`, 1200);
+        spawnLevel();
+      }
+    }
+
+    function winGame() {
+      gameOver = true;
+      messageEl.style.visibility = "visible";
+      messageEl.innerHTML = `🏆 ניצחת במשחק Laser Tag!<br>הניקוד שלך: ${score}<br><small>לחץ R כדי להתחיל מחדש</small>`;
+    }
+
+    function loseGame() {
+      gameOver = true;
+      messageEl.style.visibility = "visible";
+      messageEl.innerHTML = `💀 הפסדת!<br>הניקוד שלך: ${score}<br><small>לחץ R כדי לנסות שוב</small>`;
+    }
+
+    function showMessage(text, time) {
+      messageEl.style.visibility = "visible";
+      messageEl.innerHTML = text;
+      setTimeout(() => {
+        if (!gameOver) messageEl.style.visibility = "hidden";
+      }, time);
+    }
+
+    function restart() {
+      score = 0;
+      level = 1;
+      player.lives = 5;
+      currentWeapon = "gun";
+      gameOver = false;
+      messageEl.style.visibility = "hidden";
+      spawnLevel();
+    }
+
+    function loop() {
+      drawWorld();
+
+      if (!gameOver) {
+        updatePlayer();
+        updateEnemies();
+        updateBullets();
+        updateBombs();
+        updateSparks();
+        cleanDeadEnemies();
+
+        if (enemies.length === 0) nextLevel();
+        if (player.lives <= 0) loseGame();
+      }
+
+      drawPlayer();
+      drawEnemies();
+      drawAttacks();
+      updateUI();
+      requestAnimationFrame(loop);
+    }
+
+    window.addEventListener("keydown", e => {
+      keys[e.key] = true;
+
+      if (e.code === "Space" && player.onGround && !gameOver) {
+        player.vy = -14;
+      }
+
+      if (e.key === "1") currentWeapon = "gun";
+      if (e.key === "2") currentWeapon = "shield";
+      if (e.key === "3") currentWeapon = "knife";
+      if (e.key === "4") currentWeapon = "bomb";
+
+      if (e.key.toLowerCase() === "r" && gameOver) restart();
+    });
+
+    window.addEventListener("keyup", e => {
+      keys[e.key] = false;
+    });
+
+    window.addEventListener("mousemove", e => {
+      mouse.x = e.clientX;
+      mouse.y = e.clientY;
+    });
+
+    window.addEventListener("mousedown", () => {
+      if (!gameOver) shoot();
+    });
+
+    restart();
+    loop();
+  </script>
+</body>
+</html>
